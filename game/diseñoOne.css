@@ -1,0 +1,98 @@
+  * {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    text-decoration: none;
+  }
+
+  body {
+    overflow: hidden;
+    background: rgba(33, 0, 65, 0.938);
+  }
+
+  #lookupx1One {
+    position: relative;
+    margin: 5vh auto;
+    width: 1000px;
+    height: 600px;
+  }
+
+  #canvasOne {
+    background: url(images/pacman2.jpg);
+    width: 1000px;
+    height: 600px;
+  }
+
+  .buttonOne {
+    background: rgba(250, 161, 26, 0.986);
+    text-decoration: none;
+    box-shadow: 0px 3px 0px #ce7108;
+    position: absolute;
+    top: 250px;
+    left: 400px;
+  }
+
+  .buttonTwo {
+    background: rgba(250, 161, 26, 0.986);
+    text-decoration: none;
+    box-shadow: 0px 3px 0px #ce7108;
+    position: absolute;
+    top: 350px;
+    left: 400px;
+  }
+
+  .buttonTheree {
+    position: absolute;
+    top: 235px;
+    left: 630px;
+  }
+
+  .buttonFour {
+    position: absolute;
+    top: 0px;
+    left: 750px;
+  }
+
+  .buttonFive {
+    position: absolute;
+    top: 0px;
+    left: 850px;
+  }
+
+  .estiloBoton {
+    color: beige;
+    font-size: 20px;
+    margin: 20px;
+    padding: 20px 0px;
+    text-align: center;
+    width: 200px;
+  }
+
+  .radius {
+    border-radius: 50px;
+  }
+
+  .buttonOne:hover {
+    box-shadow: 0px 0px 0px;
+    padding-top: 7px;
+  }
+
+  .buttonTwo:hover {
+    box-shadow: 0px 0px 0px;
+    padding-top: 7px;
+  }
+
+  .buttonTheree:hover {
+    box-shadow: 0px 0px 0px;
+    padding-top: 7px;
+  }
+
+  .buttonFour:hover {
+    box-shadow: 0px 0px 0px;
+    padding-top: 7px;
+  }
+
+  .buttonFive:hover {
+    box-shadow: 0px 0px 0px;
+    padding-top: 7px;
+  }

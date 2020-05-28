@@ -1,0 +1,58 @@
+
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <link href="diseñoOne.css" rel="stylesheet" media="">
+  <title> Pac-Man</title>
+</head>
+
+<body>
+
+  <audio id="audio" src="OtherGameModes/buttonGs.ogg"></audio>
+  <script>
+    function play() {
+      var audio = document.getElementById("audio");
+      audio.play();
+    }
+  </script>
+  <div id="lookupx1One">
+    <canvas id="canvasOne"> </canvas>
+
+    <a href="OtherGameModes/selectMode.html" class="buttonOne  estiloBoton radius" onmouseover="audio.play(audio)"
+      onmouseout="audio.load(audio)"> PLAY
+    </a>
+
+    <a href="controle.html" class="buttonTwo estiloBoton radius" onmouseover="audio.play(audio)"
+      onmouseout="audio.load(audio)"> CONTROLES
+    </a>
+
+    <a href="bestScore.html" class="buttonTheree " onmouseover="audio.play(audio)" onmouseout="audio.load(audio)"><img
+        src="images/Diseño trofeoPacMan.png">
+    </a>
+
+    <a href="configuracion.html" class="buttonFour estiloBoton radius" style="width: 90px; height: 60px;"
+      onmouseover="audio.play(audio)" onmouseout="audio.load(audio)"><img
+        src="images/icono de configuracion pac man.png">
+    </a>
+
+    <a href="creditos.html" class="buttonFive estiloBoton radius" style="width: 90px; height: 60px;"
+      onmouseover="audio.play(audio)" onmouseout="audio.load(audio)"><img src="images/creditos.png">
+    </a>
+    
+    <script src="https://kit.fontawesome.com/2ca44b7cd2.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+Chettan+2:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="alert.css">
+    <div id="overlay" class="overlay active">
+      <div class="popup " style="background-color: aliceblue;">
+        <a href="#" id="closeup" class="closeup"><i class="fas fa-angle-double-left"></i> </a>
+        <h4>Recuerda interactuar con la página para <br> escuchar los efectos de sonido</h4>
+      </div>
+    </div>
+    <script src="alert.js"></script>
+  </div>
+
+
+</body>
+
+</html>

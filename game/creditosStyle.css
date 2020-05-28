@@ -1,0 +1,42 @@
+  * {
+    margin: 0px;
+    padding: 0px;
+    list-style: none;
+    text-decoration: none
+  }
+
+  body {
+    overflow: hidden;
+    background:rgb(13, 3, 100);
+  }
+
+  #creditosOne {
+    background: url(images/logo_opt.png);
+    position: relative;
+    margin: 5vh auto;
+    width: 800px;
+    height: 600px;
+  }
+
+  .buttonOne {
+    position: absolute;
+    top: 500px;
+    left: 0px;
+  }
+   .estiloBoton {
+    color:beige;
+    font-size: 20px;
+    margin: 20px ;
+    padding: 20px 0px ;
+    text-align: center;
+    width: 80px;
+  }
+
+   .radius {
+    border-radius: 50px;
+  }
+
+   .buttonOne:hover{
+    box-shadow: 0px 0px 0px;
+    padding-top: 7px;
+  }

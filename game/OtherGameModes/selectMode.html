@@ -1,0 +1,59 @@
+<html>
+<link href="selectionStyle.css" rel="stylesheet" media="">
+
+<body>
+    <script>
+        function play() {
+            var audio = document.getElementById("audio");
+            audio.play();
+            var audio1 = document.getElementById("audio1");
+            audio1.play();
+            var audio2 = document.getElementById("audio2");
+            audio2.play();
+            var audio3 = document.getElementById("audio3");
+            audio3.play();
+
+        }
+
+    </script>
+    <div class="principal" style="width: 690; height: 465;">
+        <div class="medio" style="width: 500; position: relative; text-align: center;">
+            <p class="cabecera" style="text-align: center;">Selecciona un Modo de Juego</p>
+        </div>
+        <div class="choice" style="width: 130; height: 70;">
+            <div class="medio" style="width: auto; height: max-content;">
+                <button class="select1" onclick="window.location='../game.html'" onmouseover="audio1.play(audio1)"
+                    onmouseout="audio1.load(audio1)">
+                    Interstellar
+                    <audio id="audio1" src="pianoS.ogg"></audio>
+                </button>
+            </div>
+            <div class="medio" style="width: auto; height: max-content;">
+                <button class="select2" onclick="window.location='../gameUV.html'"
+                    onmouseover="audio.play(audio)" onmouseout="audio.load(audio)">
+                    UniValle Topic
+
+                    <audio id="audio" src="russianAnthem.ogg"></audio>
+                </button>
+            </div>
+            <div class="medio" style="width: auto; height: max-content;">
+                <button class="select3" onclick="window.location='../gameHardcore.html'"
+                    onmouseover="audio2.play(audio2)" onmouseout="audio2.load(audio2)">
+                    Hardcore Pacman
+                    <audio id="audio2" src="dbsUIMs.ogg"></audio>
+                </button>
+            </div>
+
+        </div>
+        <div class="medioB" style="width: 63px; height: 62; position: relative; ">
+            <button class="back" style="width: max-content; height: max-content;"
+                onclick="window.location='../interfazDeEntrada.html'" onmouseover="audio3.play(audio3)"
+                onmouseout="audio3.load(audio3)">
+                <br>
+                <audio id="audio3" src="buttonGs.ogg"></audio>
+            </button>
+        </div>
+    </div>
+</body>
+
+</html>

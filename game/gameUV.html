@@ -1,0 +1,2440 @@
+<link href="mapDesign.css" rel="stylesheet" media="">
+
+<head>
+  <title>
+    UniValle Mode
+  </title>
+</head>
+
+<body>
+  <div id="oneDiv">
+    <canvas id="canvas"></canvas>
+    <script src="web-lib/processing.js"></script>
+    <script src="web-lib/functional-light.js"></script>
+    <audio id="audio" src="OtherGameModes/wakkaS2.ogg"></audio>
+    <audio id="audioT" src="OtherGameModes/theme.ogg"></audio>
+    <audio id="audio2" src="OtherGameModes/deadS.ogg"></audio>
+    <audio id="audio3" src="OtherGameModes/powerUpS.ogg"></audio>
+    <script>
+
+      let { append, cons, first, isEmpty, isList, length, rest } = functionalLight;
+
+      /*
+        ********* Funciones Externas Empleadas Durante el transcurso del Juego  *********
+      */
+      function play() {
+        var audio = document.getElementById("audio");
+        audio.play();
+        var audioT = document.getElementById("audioT");
+        audioT.play();
+        var audio2 = document.getElementById("audio2");
+        audio2.play();
+        var audio3 = document.getElementById("audio3");
+        audio3.play();
+
+      }
+
+
+      function make(data, attribute) {
+        return Object.assign({}, data, attribute);
+      }
+
+      function forEach(l, f, index = 0) {
+        if (!isEmpty(l)) {
+          f(first(l), index);
+          forEach(rest(l), f, index + 1);
+        }
+      }
+
+      /**
+       * Verifica Que el Fantasma Rojo Entre en Contacto con Pacman
+       * @param {Object} world 
+       * @returns {boolean}
+       */
+      function matarPacManRed(world) {
+
+        if (world.fantasmaOne.xF == world.pacman.xOne && world.pacman.yOne == world.fantasmaOne.yF) {
+          return true;
+        } {
+          return false;
+        }
+      }
+
+      /**
+       * Verifica Que el Fantasma Azul Entre en Contacto con Pacman
+       * @param {Object} world 
+       * @returns {boolean}
+       */
+      function matarPacManBlue(world) {
+
+        if (world.fantasmaTheree.xFF == world.pacman.xOne && world.pacman.yOne == world.fantasmaTheree.YFF) {
+          return true;
+        } {
+          return false;
+        }
+      }
+      /**
+       * Verifica Que el Fantasma Amarillo Entre en Contacto con Pacman
+       * @param {Object} world 
+       * @returns {boolean}
+       */
+      function matarPacManYellow(world) {
+
+        if (world.fantasmaYellow.xYellow == world.pacman.xOne && world.pacman.yOne == world.fantasmaYellow.yYellow) {
+          return true;
+        } {
+          return false;
+        }
+      }
+
+      /**
+       * Verifica Que el Fantasma Verde Entre en Contacto con Pacman
+       * @param {Object} world 
+       * @returns {boolean}
+       */
+      function matarPacManGreen(world) {
+
+        if (world.fantasmaTwoGreen.xGreen == world.pacman.xOne && world.pacman.yOne == world.fantasmaTwoGreen.yGreen) {
+          return true;
+        } {
+          return false;
+        }
+      }
+
+      /**
+       * Verifica Si Alguno de los Fantasmas Liquida a Pacman
+       * @param {Object} world 
+       * @returns {Array} 
+       */
+      function verificarDeath(world) {
+
+        if (matarPacManRed(world) == true || matarPacManBlue(world) == true || matarPacManGreen(world) == true || matarPacManYellow(world) == true) {
+          audio2.play(audio2);
+          return {
+            xOne: Math.pow(world.pacman.xOne, 0), yOne: Math.pow(world.pacman.yOne, 0), dirx: world.pacman.dirx,
+            diry: world.pacman.diry, direx: world.pacman.direx, vidas: world.pacman.vidas - 1
+          }
+
+        } if (world.pacman.vidas != 0) {
+          return {
+            xOne: world.pacman.xOne, yOne: world.pacman.yOne, dirx: world.pacman.dirx, diry: world.pacman.diry,
+            direx: world.pacman.direx, vidas: world.pacman.vidas
+          }
+        } else {
+          return {
+            xOne: world.pacman.xOne, yOne: world.pacman.yOne, dirx: world.pacman.dirx, diry: world.pacman.diry,
+            direx: world.pacman.direx, vidas: 0
+          }
+        }
+
+      }
+
+
+
+      // ********* Fin de las Funciones Externas *********
+
+      let pared = null;
+      let galletas = null;
+      let fantasmaOne = null;
+      let fondo = null;
+      const size = 30;
+      const sizeTwo = 30;
+      let mapa = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
+        [1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 0, 0, 0, 0, 0, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1],
+        [1, 2, 1, 2, 2, 2, 2, 3, 1, 2, 1, 2, 1, 0, 0, 0, 0, 0, 1, 2, 1, 2, 1, 3, 2, 2, 2, 2, 1, 2, 1],
+        [1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1],
+        [1, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1],
+        [1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
+        [1, 2, 2, 2, 1, 2, 1, 2, 2, 2, 2, 2, 1, 2, 2, 1, 2, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1, 2, 2, 2, 1],
+        [1, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 1, 2, 1, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1],
+        [1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1],
+        [1, 2, 1, 2, 2, 2, 2, 1, 1, 2, 1, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1, 2, 1, 1, 2, 2, 2, 1, 1, 2, 1],
+        [1, 2, 1, 1, 2, 1, 2, 1, 2, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 2, 1, 2, 1, 2, 1, 1, 2, 1],
+        [1, 2, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 2, 2, 1],
+        [1, 1, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2, 2, 1, 1, 2, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1, 1],
+        [1, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 1],
+        [1, 2, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 2, 1, 1, 1, 1, 2, 1],
+        [1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1],
+        [1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1],
+        [1, 2, 2, 2, 2, 2, 2, 2, 3, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 3, 2, 2, 2, 2, 2, 2, 2, 1],
+        [1, 2, 1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2, 1],
+        [0, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1]
+
+
+
+      ]
+      let puntajeW = 0;
+      let weakTime = 0;
+
+      function sketchProc(processing) {
+
+        processing.setup = function () {
+          processing.frameRate(10);
+          //fontList = processing.PFont.list();
+          //console.log(fontList);
+
+          processing.size(1020, 660);
+          pared = processing.loadImage('images/UV/paredC.png');
+          DOWN1 = processing.loadImage('images/UV/pacmanAb1.png');
+          DOWN2 = processing.loadImage('images/UV/pacmanAb2.png');
+          UP1 = processing.loadImage('images/UV/pacmanA1.png');
+          UP2 = processing.loadImage('images/UV/pacmanA2.png');
+          RIGHT1 = processing.loadImage('images/UV/pacmanD1.png');
+          RIGHT2 = processing.loadImage('images/UV/pacmanD2.png');
+          LEFT1 = processing.loadImage('images/UV/pacmanI1.png');
+          LEFT2 = processing.loadImage('images/UV/pacmanI2.png');
+
+          galletas = processing.loadImage('images/UV/Bolillo.png');
+          powerUp = processing.loadImage('images/UV/PowerUp.png')
+          fondo = processing.loadImage('images/UV/holis.jpg');
+          fantasmaONE = processing.loadImage('images/UV/FantSmad1.png');
+          fantasmaTWO = processing.loadImage('images/UV/FantSmad14.png');
+          fantasmaTHEREE = processing.loadImage('images/UV/FantSmad2.png');
+          fantasmaFOUR = processing.loadImage('images/UV/FantSmad3.png');
+          fantasmaPowerUp = processing.loadImage('images/UV/Uribe.png');
+
+          processing.background(26, 16, 50, 0.925);
+          processing.state = { anchoTwo: 1, alturaTwo: 1, pacman: { xOne: 1, yOne: 1, direx: "LEFT", dirx: null, diry: null, vidas: 3 }, cookies: { xTwo: 1, yTwo: 1 }, fantasmaOne: { xF: 1, yF: 15, direxTwo: "rigth", xA: 1, yA: 1 }, fantasmaTwoGreen: { xGreen: 25, yGreen: 1, direxGreen: "LEFT" }, fantasmaTheree: { xFF: 20, YFF: 16, direxF: "UP" }, fantasmaYellow: { xYellow: 9, yYellow: 7, direxYellow: "LEFT" }, time: 0, puntaje: 0, fantasMuerte: { timeFantasma: 0 }, timepowerOne: 0, timepowerTwo: 0, timepowerThree: 0, timepowerFour: 0 };
+        }
+
+        processing.drawGame = function (world) {
+          processing.background(0, 0, 0);
+          mapeado(mapa);
+          dibujarPacman(world);
+          winner(puntajeW);
+          weakGhost(world, mapa);
+          processing.textSize(20);
+          processing.text('Puntaje:', 930, 10, 70, 30);
+          processing.text(world.puntaje, 930, 30, 50, 30);
+          processing.text('Vidas:', 930, 60, 60, 30);
+          processing.text(world.pacman.vidas, 930, 90, 50, 30);
+
+        }
+
+        /*
+        ********* Funcion mapeado, Se Encarga de Dibujar el Mapa Por el Cual Se Desplazaran pacman, los Fantasmas y se 
+                  plasmaran las galletas-planetas que sumaran puntos. *********
+        */
+
+        /**
+         * Se encarga de recorrer la lista designada como mapa, y pintar una imagen segun el valor de la celda que recorra
+         * @param {Object} world 
+         * @param {Object} mapa 
+         */
+        function mapeado(mapa) {
+
+          forEach(mapa, (row, i) => {
+            forEach(row, (cell, j) => {
+              if (cell == 0) {
+                processing.image(fondo, j * sizeTwo, i * sizeTwo, sizeTwo, sizeTwo);
+              } if (cell == 1) {
+                processing.image(pared, j * sizeTwo, i * sizeTwo, sizeTwo, sizeTwo);
+              } if (cell == 2) {
+                processing.image(galletas, j * sizeTwo, i * sizeTwo, sizeTwo, sizeTwo);
+              } if (cell == 3) {
+                processing.image(powerUp, j * sizeTwo, i * sizeTwo, sizeTwo, sizeTwo);
+              } if (cell == 4) {
+                processing.image(fondo, j * sizeTwo, i * sizeTwo, sizeTwo, sizeTwo);
+              }
+
+
+            });
+          });
+        }
+
+        // ********* Fin de la Funcion para el Mapeado *********
+
+        /* 
+          ********* comienza la funcion que permite Dibujar Pacman *********
+        */
+
+        /**
+         * Se encarga de dibujar a PacMan Segun la Direccion que sea seleccionada
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {Array}
+         */
+        function dibujarPacman(world) {
+          /**
+            * dirY Animation
+          */
+          if (world.pacman.dirx == null) {
+
+            //Flecha Abajo
+            if (world.pacman.diry == 40) {
+              if (world.time % 5 == 0) {
+                processing.image(DOWN1, world.pacman.xOne * size, world.pacman.yOne * size, size, size);
+                return make(world, { pacman: { x: world.pacman.xOne, y: world.pacman.yOne } });
+
+              } else {
+                processing.image(DOWN2, world.pacman.xOne * size, world.pacman.yOne * size, size, size);
+                return make(world, { pacman: { x: world.pacman.xOne, y: world.pacman.yOne } });
+
+              }
+
+            } else //flecha Arriba
+              if (world.pacman.diry == 38) {
+                if (world.time % 5 == 0) {
+                  processing.image(UP1, world.pacman.xOne * size, world.pacman.yOne * size, size, size);
+                  return make(world, { pacman: { x: world.pacman.xOne, y: world.pacman.yOne } });
+
+                } else {
+                  processing.image(UP2, world.pacman.xOne * size, world.pacman.yOne * size, size, size);
+                  return make(world, { pacman: { x: world.pacman.xOne, y: world.pacman.yOne } });
+
+                }
+
+              }
+
+
+          }
+          /*
+            * dirX Animation
+          */
+          if (world.pacman.diry == null) {
+
+            //flecha Izquierda
+            if (world.pacman.dirx == 37) {
+              if (world.time % 5 == 0) {
+                processing.image(LEFT1, world.pacman.xOne * size, world.pacman.yOne * size, size, size);
+                return make(world, { pacman: { x: world.pacman.xOne, y: world.pacman.yOne } });
+
+              } else {
+                processing.image(LEFT2, world.pacman.xOne * size, world.pacman.yOne * size, size, size);
+                return make(world, { pacman: { x: world.pacman.xOne, y: world.pacman.yOne } });
+
+              }
+
+            } else //Flecha Derecha
+              if (world.pacman.dirx == 39) {
+                if (world.time % 5 == 0) {
+                  processing.image(RIGHT1, world.pacman.xOne * size, world.pacman.yOne * size, size, size);
+                  return make(world, { pacman: { x: world.pacman.xOne, y: world.pacman.yOne } });
+
+                } else {
+                  processing.image(RIGHT2, world.pacman.xOne * size, world.pacman.yOne * size, size, size);
+                  return make(world, { pacman: { x: world.pacman.xOne, y: world.pacman.yOne } });
+
+                }
+
+              }
+
+
+          }
+
+          /*
+            *-Static Animation
+          */
+          if (world.pacman.dirx == null && world.pacman.diry == null) {
+            processing.image(RIGHT2, world.pacman.xOne * size, world.pacman.yOne * size, size, size);
+          }
+
+          return make(world, { pacman: { xOne: world.pacman.xOne, yOne: world.pacman.yOne, dirx: world.pacman.dirx, diry: world.pacman.diry, direx: world.pacman.direx } });
+        }
+
+        // ********* Finalzia la Funcion de Dibujar a Pacman *********
+
+
+        /*
+          ********* Funcion que Permite Sumar el Puntaje *********
+        */
+
+        /**
+         * Se encarga de verificar si el jugador consigue la victoria puntaje máximo 3490
+         * @param {Number} puntajeW
+         * @returns {}
+         */
+        function winner(puntajeW) {
+
+          if (puntajeW >= 3450) {
+            window.alert("Felicidades, Has Ganado a Spacial PacMan Lite Pro");
+            window.location = "alternativeScreens/winScreenUV.html";
+
+          }
+        }
+
+        // ********* Fin de la Funcion del Puntaje *********
+
+        /*
+         ********* Funciones que dan movimiento a los Fantasmas *********
+        */
+
+        /**
+         * Funciones Fantasma Rojo
+         */
+
+        /**
+         * Realiza el Movimiento del Fantasma Rojo Siempre y Cuando No Tenga un Muro en la Dirección en la Que Realiza el Movimiento
+         * @param {Object} world 
+         * @returns {Array}
+         */
+        function movimientoFantasma(world) {
+          if (isValidFantasmaRight(world, mapa) == true && world.fantasmaOne.direxTwo != "LEFT") {
+            if (world.pacman.xOne < world.fantasmaOne.xF) {
+              if (isValidFantasmaLeft(world, mapa) == true && world.fantasmaOne.direxTwo != "RIGHT") {
+                return { xF: world.fantasmaOne.xF - 1, yF: world.fantasmaOne.yF, direxTwo: "LEFT" }
+
+              }
+            } else if (world.fantasmaOne.xF < world.pacman.xOne) {
+              if (isValidFantasmaRight(world, mapa) == true && world.fantasmaOne.direxTwo != "LEFT") {
+                return { xF: world.fantasmaOne.xF + 1, yF: world.fantasmaOne.yF, direxTwo: "RIGHT" }
+
+              }
+            }
+            return { xF: world.fantasmaOne.xF + 1, yF: world.fantasmaOne.yF, direxTwo: "RIGHT" }
+
+          } else if (isValidFantasmaLeft(world, mapa) == true && world.fantasmaOne.direxTwo != "RIGHT") {
+
+            if (world.pacman.xOne < world.fantasmaOne.xF) {
+              if (isValidFantasmaRight(world, mapa) == true && world.fantasmaOne.direxTwo != "LEFT") {
+                return { xF: world.fantasmaOne.xF + 1, yF: world.fantasmaOne.yF, direxTwo: "RIGHT" }
+
+              }
+            } else if (world.fantasmaOne.xF < world.pacman.xOne) {
+              if (isValidFantasmaLeft(world, mapa) == true && world.fantasmaOne.direxTwo != "RIGHT") {
+                return { xF: world.fantasmaOne.xF - 1, yF: world.fantasmaOne.yF, direxTwo: "LEFT" }
+
+              }
+            }
+            return { xF: world.fantasmaOne.xF - 1, yF: world.fantasmaOne.yF, direxTwo: "LEFT" }
+
+          } else if (isValidFantasmaUp(world, mapa) == true && world.fantasmaOne.direxTwo != "DOWN") {
+            if (world.fantasmaOne.yF < world.pacman.yOne) {
+              if (isValidFantasmaDown(world, mapa) == true && world.fantasmaOne.direxTwo != "UP") {
+                return { xF: world.fantasmaOne.xF, yF: world.fantasmaOne.yF + 1, direxTwo: "DOWN" }
+
+              }
+            } else if (world.pacman.yOne < world.fantasmaOne.yF) {
+              if (isValidFantasmaUp(world, mapa) == true && world.fantasmaOne.direxTwo != "DOWN") {
+                return { xF: world.fantasmaOne.xF, yF: world.fantasmaOne.yF - 1, direxTwo: "UP" }
+
+              }
+            }
+            return { xF: world.fantasmaOne.xF, yF: world.fantasmaOne.yF - 1, direxTwo: "UP" }
+
+          } else if (isValidFantasmaDown(world, mapa) == true && world.fantasmaOne.direxTwo !=
+            "UP") {
+            if (world.pacman.yOne < world.fantasmaOne.yF) {
+
+              if (isValidFantasmaUp(world, mapa) == true && world.fantasmaOne.direxTwo != "DOWN") {
+                return { xF: world.fantasmaOne.xF, yF: world.fantasmaOne.yF - 1, direxTwo: "UP" }
+
+              }
+            } else if (world.fantasmaOne.yF < world.pacman.yOne) {
+              if (isValidFantasmaDown(world, mapa) == true && world.fantasmaOne.direxTwo != "UP") {
+                return { xF: world.fantasmaOne.xF, yF: world.fantasmaOne.yF + 1, direxTwo: "DOWN" }
+
+              }
+            }
+            return { xF: world.fantasmaOne.xF, yF: world.fantasmaOne.yF + 1, direxTwo: "DOWN" }
+          }
+          return { xF: world.fantasmaOne.xF + 1, yF: world.fantasmaOne.yF, direxTwo: "RIGHT" }
+
+        }
+
+        /**
+         * Verifica si es posible que el fantasma rojo realice un movimiento hacia la izquierda
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function isValidFantasmaLeft(world, mapa) {
+          if (world.fantasmaOne.xF >= 0 && world.fantasmaOne.xF < length(first(mapa)) &&
+            world.fantasmaOne.yF >= 0 && world.fantasmaOne.yF < length(mapa)) {
+            if (mapa[world.fantasmaOne.yF][world.fantasmaOne.xF - 1] != 1) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        /**
+         * Verifica si es posible que el fantasma Rojo realice un movimiento hacia la derecha
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function isValidFantasmaRight(world, mapa) {
+          if (world.fantasmaOne.xF >= 0 && world.fantasmaOne.xF < length(first(mapa)) &&
+            world.fantasmaOne.yF >= 0 && world.fantasmaOne.yF < length(mapa)) {
+            if (mapa[world.fantasmaOne.yF][world.fantasmaOne.xF + 1] != 1) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        /**
+         * Verifica si es posible que el fantasma Rojo realice un movimiento hacia arriba
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean} 
+         */
+        function isValidFantasmaUp(world, mapa) {
+          if (world.fantasmaOne.xF >= 0 && world.fantasmaOne.xF < length(first(mapa)) &&
+            world.fantasmaOne.yF >= 0 && world.fantasmaOne.yF < length(mapa)) {
+            if (mapa[world.fantasmaOne.yF - 1][world.fantasmaOne.xF] != 1) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        /**
+         * Verifica si es posible que el fantasma Rojo realice un movimiento hacia abajo
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function isValidFantasmaDown(world, mapa) {
+          if (world.fantasmaOne.xF >= 0 && world.fantasmaOne.xF < length(first(mapa)) &&
+            world.fantasmaOne.yF >= 0 && world.fantasmaOne.yF < length(mapa)) {
+            if (mapa[world.fantasmaOne.yF + 1][world.fantasmaOne.xF] != 1) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        // Fin Fantasma Rojo
+
+        /**
+         * Funciones Fantasma verde
+        */
+
+        /**
+         * Realiza el Movimiento del Fantasma verde Siempre y Cuando No Tenga un Muro en la Dirección en la Que Realiza el Movimiento
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {Array}
+         */
+        function movimientoFantasmaTwoGreen(world, mapa) {
+          /*-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-*/
+          if (isValidFantasmaTwoGreenRight(world, mapa) == true && world.fantasmaTwoGreen.direxGreen != "LEFT") {
+
+            return { xGreen: world.fantasmaTwoGreen.xGreen + 1, yGreen: world.fantasmaTwoGreen.yGreen, direxGreen: "RIGHT" }
+
+          }
+          /*-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-*/
+
+          if (isValidFantasmaTwoGreenLeft(world, mapa) == true && world.fantasmaTwoGreen.direxGreen != "RIGHT") {
+
+            return { xGreen: world.fantasmaTwoGreen.xGreen - 1, yGreen: world.fantasmaTwoGreen.yGreen, direxGreen: "LEFT" }
+
+          }
+
+          /*-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-*/
+          if (isValidFantasmaTwoGreenDown(world, mapa) == true && world.fantasmaTwoGreen.direxGreen != "UP") {
+
+            if (world.fantasmaTwoGreen.yGreen > world.pacman.yOne) {
+              if (isValidFantasmaTwoGreenUp(world, mapa) == true && world.fantasmaTwoGreen.direxGreen != "DOWN") {
+                return { xGreen: world.fantasmaTwoGreen.xGreen, yGreen: world.fantasmaTwoGreen.yGreen - 1, direxGreen: "UP" }
+              }
+
+            }
+
+            return { xGreen: world.fantasmaTwoGreen.xGreen, yGreen: world.fantasmaTwoGreen.yGreen + 1, direxGreen: "DOWN" }
+
+          }
+          /*-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-*/
+          if (isValidFantasmaTwoGreenUp(world, mapa) == true && world.fantasmaTwoGreen.direxGreen != "DOWN") {
+
+            if (world.pacman.yOne > world.fantasmaTwoGreen.xGreen) {
+              if (isValidFantasmaTwoGreenDown(world, mapa) == true && world.fantasmaTwoGreen.direxGreen != "UP") {
+                return { xGreen: world.fantasmaTwoGreen.xGreen, yGreen: world.fantasmaTwoGreen.yGreen + 1, direxGreen: "DOWN" }
+
+              }
+
+            }
+
+            return { xGreen: world.fantasmaTwoGreen.xGreen, yGreen: world.fantasmaTwoGreen.yGreen - 1, direxGreen: "UP" }
+
+          }
+          /*-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-*/
+
+          return { xGreen: world.fantasmaTwoGreen.xGreen + 1, yGreen: world.fantasmaTwoGreen.yGreen, direxGreen: "RIGHT" }
+
+
+        }
+
+        /**
+         * Verifica si es posible que el fantasma verde realice un movimiento hacia abajo
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+
+        function isValidFantasmaTwoGreenDown(world, mapa) {
+          if (world.fantasmaTwoGreen.xGreen >= 0 && world.fantasmaTwoGreen.xGreen < length(first(mapa)) &&
+            world.fantasmaTwoGreen.yGreen >= 0 && world.fantasmaTwoGreen.yGreen < length(mapa)) {
+            if (mapa[world.fantasmaTwoGreen.yGreen + 1][world.fantasmaTwoGreen.xGreen] != 1) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        /**
+         * Verifica si es posible que el fantasma verde realice un movimiento hacia arriba
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function isValidFantasmaTwoGreenUp(world, mapa) {
+          if (world.fantasmaTwoGreen.xGreen >= 0 && world.fantasmaTwoGreen.xGreen < length(first(mapa)) &&
+            world.fantasmaTwoGreen.yGreen >= 0 && world.fantasmaTwoGreen.yGreen < length(mapa)) {
+            if (mapa[world.fantasmaTwoGreen.yGreen - 1][world.fantasmaTwoGreen.xGreen] != 1) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        /**
+         * Verifica si es posible que el fantasma verde realice un movimiento hacia la izquierda
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function isValidFantasmaTwoGreenLeft(world, mapa) {
+          if (world.fantasmaTwoGreen.xGreen >= 0 && world.fantasmaTwoGreen.xGreen < length(first(mapa)) &&
+            world.fantasmaTwoGreen.yGreen >= 0 && world.fantasmaTwoGreen.yGreen < length(mapa)) {
+            if (mapa[world.fantasmaTwoGreen.yGreen][world.fantasmaTwoGreen.xGreen - 1] != 1) {
+              return true;
+            } {
+              return false;
+            }
+          }
+        }
+
+        /**
+         * Verifica si es posible que el fantasma verde realice un movimiento hacia la derecha
+         * @param {Object} world 
+         * @param {Object} mapa
+         * @returns {boolean} 
+         */
+        function isValidFantasmaTwoGreenRight(world, mapa) {
+          if (world.fantasmaTwoGreen.xGreen >= 0 && world.fantasmaTwoGreen.xGreen < length(first(mapa)) &&
+            world.fantasmaTwoGreen.yGreen >= 0 && world.fantasmaTwoGreen.yGreen < length(mapa)) {
+            if (mapa[world.fantasmaTwoGreen.yGreen][world.fantasmaTwoGreen.xGreen + 1] != 1) {
+              return true;
+            } {
+              return false;
+            }
+          }
+        }
+
+
+        //Fin Fantasma Verde
+
+        /**
+         * Funciones Fantasma Azul
+         */
+
+        //funcion movimientos fantasma Azul
+
+        /**
+         * Realiza el Movimiento del Fantasma Azul Siempre y Cuando No Tenga un Muro en la Dirección en la Que Realiza el Movimiento
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {Array}
+         */
+        function movimientoFantasmaThreeBlue(world, mapa) {
+          //movimiento hacia arriba
+          if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+            //funcion movimientos fantasma Azul
+
+            function movimientoFantasmaTheree(world, mapa) {
+              //movimiento hacia arriba
+              if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                if (world.fantasmaTheree.YFF <= world.pacman.yOne && world.pacman.xOne <= world.fantasmaTheree.xFF) {
+
+                  if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                    if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                      return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+
+                    }
+
+                  } else if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                    return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+
+                  }
+                  if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+                    return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+                  }
+
+                } else if (world.fantasmaTheree.YFF <= world.pacman.yOne) {
+
+                  if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                    if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                      return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+
+                    }
+
+                  } else if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                    if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                      return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+
+                    }
+
+                  }
+                  if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+                    return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+                  }
+
+                }
+
+                if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+                  return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+                }
+
+              }
+              // movimiento hacia Abajo      
+              else if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                if (world.pacman.yOne <= world.fantasmaTheree.YFF && world.fantasmaTheree.xFF <= world.pacman.xOne) {
+
+                  if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                    return { xFF: world.fantasmaTheree.xFF + 1, YFF: world.fantasmaTheree.YFF, direxF: "RIGHT" }
+
+                  } else if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                    if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                      return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+                    }
+
+
+                  }
+                  if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                    return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+                  }
+                } else if (world.fantasmaTheree.YFF <= world.pacman.yOne) {
+
+                  if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                    if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                      return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+                    }
+
+                  } else if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                    if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                      return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+                    }
+                  }
+
+                } else if (world.fantasmaTheree.YFF <= world.pacman.yOne && world.pacman.xOne <= world.fantasmaTheree.xFF) {
+
+                  if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                    if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                      return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+                    }
+
+                  } else if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                    return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+
+                  }
+
+                  if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                    return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+                  }
+
+                }
+                if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+                  return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+                }
+
+              }
+              // movimiento izquierda          
+              else if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                if (isValidFantasmaThereeRight(world, mapa) == false && world.fantasmaTheree.YFF <= world.pacman.yOne && world.fantasmaTheree.direxF != "LEFT") {
+
+                  if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                    return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+
+                  }
+
+                } else if (isValidFantasmaThereeRight(world, mapa) == false && world.pacman.yOne <= world.fantasmaTheree.YFF && world.fantasmaTheree.direxF != "LEFT") {
+
+                  if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                    return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+                  }
+
+                } else if (world.fantasmaTheree.xFF <= world.pacman.xOne) {
+
+                  if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                    if (sValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                      return { xFF: world.fantasmaTheree.xFF + 1, YFF: world.fantasmaTheree.YFF, direxF: "RIGHT" }
+
+                    }
+
+                  } else if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                    if (sValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                      return { xFF: world.fantasmaTheree.xFF + 1, YFF: world.fantasmaTheree.YFF, direxF: "RIGHT" }
+
+                    }
+
+                  }
+
+                  if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                    return { xFF: world.fantasmaTheree.xFF + 1, YFF: world.fantasmaTheree.YFF, direxF: "RIGHT" }
+
+                  }
+                  if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+                    return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+                  }
+
+                }
+
+
+              }
+              // movimiento hacia arriba
+              else if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                if (isValidFantasmaThereeLeft(world, mapa) == false && world.fantasmaTheree.YFF <= world.pacman.yOne && world.fantasmaTheree.direxF != "RIGHT") {
+
+                  if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+                    return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+                  }
+
+                } else if (isValidFantasmaThereeLeft(world, mapa) == false && world.pacman.yOne <= world.fantasmaTheree.YFF && world.fantasmaTheree.direxF != "RIGHT") {
+
+                  if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                    return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+                  }
+
+                } else if (world.pacman.xOne <= world.fantasmaTheree.xFF) {
+
+                  if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                    if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                      return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+
+                    }
+
+
+                  } else if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                    if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                      return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+
+                    }
+
+
+                  }
+                  if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                    return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+
+                  }
+
+
+                }
+                if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+                  return { xFF: world.fantasmaTheree.xFF + 1, YFF: world.fantasmaTheree.YFF, direxF: "RIGHT" }
+                }
+              }
+
+              return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+            }
+
+            if (world.fantasmaTheree.YFF <= world.pacman.yOne && world.pacman.xOne <= world.fantasmaTheree.xFF) {
+
+              if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                  return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+
+                }
+
+              } else if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+
+              }
+              if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+                return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+              }
+
+            } else if (world.fantasmaTheree.YFF <= world.pacman.yOne) {
+
+              if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                  return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+
+                }
+
+              } else if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                  return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+
+                }
+
+              }
+              if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+                return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+              }
+
+            }
+
+            if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+              return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+            }
+
+          }
+          // movimiento hacia Abajo      
+          else if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+            if (world.pacman.yOne <= world.fantasmaTheree.YFF && world.fantasmaTheree.xFF <= world.pacman.xOne) {
+
+              if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                return { xFF: world.fantasmaTheree.xFF + 1, YFF: world.fantasmaTheree.YFF, direxF: "RIGHT" }
+
+              } else if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                  return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+                }
+
+
+              }
+              if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+              }
+            } else if (world.fantasmaTheree.YFF <= world.pacman.yOne) {
+
+              if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                  return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+                }
+
+              } else if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                  return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+                }
+              }
+
+            } else if (world.fantasmaTheree.YFF <= world.pacman.yOne && world.pacman.xOne <= world.fantasmaTheree.xFF) {
+
+              if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                  return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+                }
+
+              } else if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+
+              }
+
+              if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+              }
+
+            }
+            if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+              return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+            }
+
+          }
+          // movimiento izquierda          
+          else if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+            if (isValidFantasmaThereeRight(world, mapa) == false && world.fantasmaTheree.YFF <= world.pacman.yOne && world.fantasmaTheree.direxF != "LEFT") {
+
+              if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+
+              }
+
+            } else if (isValidFantasmaThereeRight(world, mapa) == false && world.pacman.yOne <= world.fantasmaTheree.YFF && world.fantasmaTheree.direxF != "LEFT") {
+
+              if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+              }
+
+            } else if (world.fantasmaTheree.xFF <= world.pacman.xOne) {
+
+              if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                if (sValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                  return { xFF: world.fantasmaTheree.xFF + 1, YFF: world.fantasmaTheree.YFF, direxF: "RIGHT" }
+
+                }
+
+              } else if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                if (sValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                  return { xFF: world.fantasmaTheree.xFF + 1, YFF: world.fantasmaTheree.YFF, direxF: "RIGHT" }
+
+                }
+
+              }
+
+              if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+                return { xFF: world.fantasmaTheree.xFF + 1, YFF: world.fantasmaTheree.YFF, direxF: "RIGHT" }
+
+              }
+              if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+                return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+              }
+
+            }
+
+
+          }
+          // movimiento hacia arriba
+          else if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "LEFT") {
+
+            if (isValidFantasmaThereeLeft(world, mapa) == false && world.fantasmaTheree.YFF <= world.pacman.yOne && world.fantasmaTheree.direxF != "RIGHT") {
+
+              if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+                return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+              }
+
+            } else if (isValidFantasmaThereeLeft(world, mapa) == false && world.pacman.yOne <= world.fantasmaTheree.YFF && world.fantasmaTheree.direxF != "RIGHT") {
+
+              if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+              }
+
+            } else if (world.pacman.xOne <= world.fantasmaTheree.xFF) {
+
+              if (isValidFantasmaThereeUp(world, mapa) == true && world.fantasmaTheree.direxF != "DOWN") {
+
+                if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                  return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+
+                }
+
+
+              } else if (isValidFantasmaThereeDown(world, mapa) == true && world.fantasmaTheree.direxF != "UP") {
+
+                if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                  return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+
+                }
+
+
+              }
+              if (isValidFantasmaThereeLeft(world, mapa) == true && world.fantasmaTheree.direxF != "RIGHT") {
+
+                return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+
+              }
+
+            }
+            if (isValidFantasmaThereeRight(world, mapa) == true && world.fantasmaTheree.direxF != "") {
+              return { xFF: world.fantasmaTheree.xFF + 1, YFF: world.fantasmaTheree.YFF, direxF: "RIGHT" }
+            }
+          } else if (isValidFantasmaThereeDown(world, mapa) == false && isValidFantasmaThereeLeft(world, mapa) == false && isValidFantasmaThereeUp(world, mapa) == false) {
+
+            return { xFF: world.fantasmaTheree.xFF + 1, YFF: world.fantasmaTheree.YFF, direxF: "RIGHT" }
+
+          } else if (isValidFantasmaThereeDown(world, mapa) == false && isValidFantasmaThereeRight(world, mapa) == false && isValidFantasmaThereeUp(world, mapa) == false) {
+
+            return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+
+          } else if (isValidFantasmaThereeDown(world, mapa) == false && isValidFantasmaThereeLeft(world, mapa) == false && isValidFantasmaThereeRight(world, mapa) == false) {
+
+            return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF - 1, direxF: "UP" }
+
+          } else if (isValidFantasmaThereeUp(world, mapa) == false && isValidFantasmaThereeLeft(world, mapa) == false && isValidFantasmaThereeRight(world, mapa) == false) {
+
+            return { xFF: world.fantasmaTheree.xFF, YFF: world.fantasmaTheree.YFF + 1, direxF: "DOWN" }
+
+          }
+
+          return { xFF: world.fantasmaTheree.xFF - 1, YFF: world.fantasmaTheree.YFF, direxF: "LEFT" }
+        }
+
+
+        /*+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+*/
+
+
+        /**
+         * Verifica si es posible que el fantasma azul realice un movimiento hacia la derecha
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean} 
+         */
+        function isValidFantasmaThereeRight(world, mapa) {
+          if (world.fantasmaTheree.xFF >= 0 && world.fantasmaTheree.xFF < length(first(mapa)) && world.fantasmaTheree.YFF >= 0 && world.fantasmaTheree.YFF < length(mapa)) {
+            if (mapa[world.fantasmaTheree.YFF][world.fantasmaTheree.xFF + 1] != 1) {
+              return true;
+            } {
+              return false;
+            }
+
+          }
+        }
+
+        /**
+         * Verifica si es posible que el fantasma Azul realice un movimiento hacia la izquierda
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean} 
+         */
+        function isValidFantasmaThereeLeft(world, mapa) {
+          if (world.fantasmaTheree.xFF >= 0 && world.fantasmaTheree.xFF < length(first(mapa)) && world.fantasmaTheree.YFF >= 0 && world.fantasmaTheree.YFF < length(mapa)) {
+            if (mapa[world.fantasmaTheree.YFF][world.fantasmaTheree.xFF - 1] != 1) {
+              return true;
+            }
+          } {
+            return false;
+          }
+
+        }
+
+        /**
+         * Verifica si es posible que el fantasma Azul realice un movimiento hacia arriba
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean} 
+         */
+        function isValidFantasmaThereeUp(world, mapa) {
+          if (world.fantasmaTheree.xFF >= 0 && world.fantasmaTheree.xFF < length(first(mapa)) && world.fantasmaTheree.YFF >= 0 && world.fantasmaTheree.YFF < length(mapa)) {
+            if (mapa[world.fantasmaTheree.YFF - 1][world.fantasmaTheree.xFF] != 1) {
+              return true;
+            } {
+              return false;
+            }
+
+          }
+        }
+
+        /**
+         * Verifica si es posible que el fantasma Azul realice un movimiento hacia abajo
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean} 
+         */
+        function isValidFantasmaThereeDown(world, mapa) {
+          if (world.fantasmaTheree.xFF >= 0 && world.fantasmaTheree.xFF < length(first(mapa)) && world.fantasmaTheree.YFF >= 0 && world.fantasmaTheree.YFF < length(mapa)) {
+            if (mapa[world.fantasmaTheree.YFF + 1][world.fantasmaTheree.xFF] != 1) {
+              return true;
+            } {
+              return false;
+            }
+
+          }
+        }
+
+        // Fin del Fantasma Azul
+
+        /*
+         * Funciones Fantasma Amarillo
+         */
+
+        /**
+         * Realiza el Movimiento del Fantasma Amarillo Siempre y Cuando No Tenga un Muro en la Dirección en la Que Realiza el Movimiento
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {Array}
+        */
+        function movimientoFantasmaFourYellow(world, mapa) {
+          //movimiento hacia arriba
+          if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+            //funcion movimientos fantasma Amarillo
+
+            function movimientoFantasmaFour(world, mapa) {
+              //movimiento hacia arriba
+              if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                if (world.fantasmaYellow.yYellow <= world.pacman.yOne && world.pacman.xOne <= world.fantasmaYellow.xYellow) {
+
+                  if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                    if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                      return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+
+                    }
+
+                  } else if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                    return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+
+                  }
+                  if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+                    return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+                  }
+
+                } else if (world.fantasmaYellow.yYellow <= world.pacman.yOne) {
+
+                  if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                    if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                      return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+
+                    }
+
+                  } else if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                    if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                      return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+
+                    }
+
+                  }
+                  if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+                    return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+                  }
+
+                }
+
+                if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+                  return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+                }
+
+              }
+              // movimiento hacia Abajo      
+              else if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                if (world.pacman.yOne <= world.fantasmaYellow.yYellow && world.fantasmaYellow.xYellow <= world.pacman.xOne) {
+
+                  if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                    return { xYellow: world.fantasmaYellow.xYellow + 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "RIGHT" }
+
+                  } else if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                    if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                      return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+                    }
+
+
+                  }
+                  if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                    return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+                  }
+                } else if (world.fantasmaYellow.yYellow <= world.pacman.yOne) {
+
+                  if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                    if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                      return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+                    }
+
+                  } else if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                    if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                      return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+                    }
+                  }
+
+                } else if (world.fantasmaYellow.yYellow <= world.pacman.yOne && world.pacman.xOne <= world.fantasmaYellow.xYellow) {
+
+                  if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                    if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                      return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+                    }
+
+                  } else if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                    return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+
+                  }
+
+                  if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                    return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+                  }
+
+                }
+                if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+                  return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+                }
+
+              }
+              // movimiento izquierda          
+              else if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                if (isValidFantasmaYellowRight(world, mapa) == false && world.fantasmaYellow.yYellow <= world.pacman.yOne && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                  if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                    return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+
+                  }
+
+                } else if (isValidFantasmaYellowRight(world, mapa) == false && world.pacman.yOne <= world.fantasmaYellow.yYellow && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                  if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                    return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+                  }
+
+                } else if (world.fantasmaYellow.xYellow <= world.pacman.xOne) {
+
+                  if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                    if (sValidFantasmaThereeRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                      return { xYellow: world.fantasmaYellow.xYellow + 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "RIGHT" }
+
+                    }
+
+                  } else if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                    if (sValidFantasmaThereeRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                      return { xYellow: world.fantasmaYellow.xYellow + 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "RIGHT" }
+
+                    }
+
+                  }
+
+                  if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                    return { xYellow: world.fantasmaYellow.xYellow + 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "RIGHT" }
+
+                  }
+                  if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+                    return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+                  }
+
+                }
+
+
+              }
+              // movimiento hacia arriba
+              else if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                if (isValidFantasmaYellowLeft(world, mapa) == false && world.fantasmaYellow.yYellow <= world.pacman.yOne && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                  if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+                    return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+                  }
+
+                } else if (isValidFantasmaYellowLeft(world, mapa) == false && world.pacman.yOne <= world.fantasmaYellow.yYellow && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                  if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                    return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+                  }
+
+                } else if (world.pacman.xOne <= world.fantasmaYellow.xYellow) {
+
+                  if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                    if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                      return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+
+                    }
+
+
+                  } else if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                    if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                      return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+
+                    }
+
+
+                  }
+                  if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                    return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+
+                  }
+
+
+                }
+                if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+                  return { xYellow: world.fantasmaYellow.xYellow + 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "RIGHT" }
+                }
+              }
+
+              return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+            }
+
+            if (world.fantasmaYellow.yYellow <= world.pacman.yOne && world.pacman.xOne <= world.fantasmaYellow.xYellow) {
+
+              if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                  return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+
+                }
+
+              } else if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+
+              }
+              if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+                return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+              }
+
+            } else if (world.fantasmaYellow.yYellow <= world.pacman.yOne) {
+
+              if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                  return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+
+                }
+
+              } else if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                  return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+
+                }
+
+              }
+              if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+                return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+              }
+
+            }
+
+            if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+              return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+            }
+
+          }
+          // movimiento hacia Abajo      
+          else if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+            if (world.pacman.yOne <= world.fantasmaYellow.yYellow && world.fantasmaYellow.xYellow <= world.pacman.xOne) {
+
+              if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                return { xYellow: world.fantasmaYellow.xYellow + 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "RIGHT" }
+
+              } else if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                  return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+                }
+
+
+              }
+              if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+              }
+            } else if (world.fantasmaYellow.yYellow <= world.pacman.yOne) {
+
+              if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                  return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+                }
+
+              } else if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                  return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+                }
+              }
+
+            } else if (world.fantasmaYellow.yYellow <= world.pacman.yOne && world.pacman.xOne <= world.fantasmaYellow.xYellow) {
+
+              if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                  return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+                }
+
+              } else if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+
+              }
+
+              if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+              }
+
+            }
+            if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+              return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+            }
+
+          }
+          // movimiento izquierda          
+          else if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+            if (isValidFantasmaYellowRight(world, mapa) == false && world.fantasmaYellow.yYellow <= world.pacman.yOne && world.fantasmaYellow.direxYellow != "LEFT") {
+
+              if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+
+              }
+
+            } else if (isValidFantasmaYellowRight(world, mapa) == false && world.pacman.yOne <= world.fantasmaYellow.yYellow && world.fantasmaYellow.direxYellow != "LEFT") {
+
+              if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+              }
+
+            } else if (world.fantasmaYellow.xYellow <= world.pacman.xOne) {
+
+              if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                if (sValidFantasmaThereeRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                  return { xYellow: world.fantasmaYellow.xYellow + 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "RIGHT" }
+
+                }
+
+              } else if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                if (sValidFantasmaThereeRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                  return { xYellow: world.fantasmaYellow.xYellow + 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "RIGHT" }
+
+                }
+
+              }
+
+              if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+                return { xYellow: world.fantasmaYellow.xYellow + 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "RIGHT" }
+
+              }
+              if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+                return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+              }
+
+            }
+
+
+          }
+          // movimiento hacia arriba
+          else if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "LEFT") {
+
+            if (isValidFantasmaYellowLeft(world, mapa) == false && world.fantasmaYellow.yYellow <= world.pacman.yOne && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+              if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+                return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+              }
+
+            } else if (isValidFantasmaYellowLeft(world, mapa) == false && world.pacman.yOne <= world.fantasmaYellow.yYellow && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+              if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+              }
+
+            } else if (world.pacman.xOne <= world.fantasmaYellow.xYellow) {
+
+              if (isValidFantasmaYellowUp(world, mapa) == true && world.fantasmaYellow.direxYellow != "DOWN") {
+
+                if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                  return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+
+                }
+
+
+              } else if (isValidFantasmaYellowDown(world, mapa) == true && world.fantasmaYellow.direxYellow != "UP") {
+
+                if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                  return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+
+                }
+
+
+              }
+              if (isValidFantasmaYellowLeft(world, mapa) == true && world.fantasmaYellow.direxYellow != "RIGHT") {
+
+                return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+
+              }
+
+
+            }
+            if (isValidFantasmaYellowRight(world, mapa) == true && world.fantasmaYellow.direxYellow != "") {
+              return { xYellow: world.fantasmaYellow.xYellow + 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "RIGHT" }
+            }
+          } else if (isValidFantasmaYellowDown(world, mapa) == false && isValidFantasmaYellowLeft(world, mapa) == false && isValidFantasmaYellowRight(world, mapa) == false) {
+
+            return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow - 1, direxYellow: "UP" }
+
+          } else if (isValidFantasmaYellowUp(world, mapa) == false && isValidFantasmaYellowLeft(world, mapa) == false && isValidFantasmaYellowRight(world, mapa) == false) {
+
+            return { xYellow: world.fantasmaYellow.xYellow, yYellow: world.fantasmaYellow.yYellow + 1, direxYellow: "DOWN" }
+
+          } else if (isValidFantasmaYellowDown(world, mapa) == false && isValidFantasmaYellowUp(world, mapa) == false && isValidFantasmaYellowRight(world, mapa) == false) {
+
+            return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+
+          } else if (isValidFantasmaYellowDown(world, mapa) == false && isValidFantasmaYellowUp(world, mapa) == false && isValidFantasmaYellowLeft(world, mapa) == false) {
+
+            return { xYellow: world.fantasmaYellow.xYellow + 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "RIGHT" }
+
+          }
+          return { xYellow: world.fantasmaYellow.xYellow - 1, yYellow: world.fantasmaYellow.yYellow, direxYellow: "LEFT" }
+        }
+
+
+        /*+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+*/
+
+
+        /**
+         * Verifica si es posible que el fantasma azul realice un movimiento hacia la derecha
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean} 
+         */
+        function isValidFantasmaYellowRight(world, mapa) {
+          if (world.fantasmaYellow.xYellow >= 0 && world.fantasmaYellow.xYellow < length(first(mapa)) && world.fantasmaYellow.yYellow >= 0 && world.fantasmaYellow.yYellow < length(mapa)) {
+            if (mapa[world.fantasmaYellow.yYellow][world.fantasmaYellow.xYellow + 1] != 1) {
+              return true;
+            } {
+              return false;
+            }
+
+          }
+        }
+
+        /**
+         * Verifica si es posible que el fantasma Amarillo realice un movimiento hacia la izquierda
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean} 
+         */
+        function isValidFantasmaYellowLeft(world, mapa) {
+          if (world.fantasmaYellow.xYellow >= 0 && world.fantasmaYellow.xYellow < length(first(mapa)) && world.fantasmaYellow.yYellow >= 0 && world.fantasmaYellow.yYellow < length(mapa)) {
+            if (mapa[world.fantasmaYellow.yYellow][world.fantasmaYellow.xYellow - 1] != 1) {
+              return true;
+            }
+          } {
+            return false;
+          }
+
+        }
+
+        /**
+         * Verifica si es posible que el fantasma Amarillo realice un movimiento hacia arriba
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean} 
+         */
+        function isValidFantasmaYellowUp(world, mapa) {
+          if (world.fantasmaYellow.xYellow >= 0 && world.fantasmaYellow.xYellow < length(first(mapa)) && world.fantasmaYellow.yYellow >= 0 && world.fantasmaYellow.yYellow < length(mapa)) {
+            if (mapa[world.fantasmaYellow.yYellow - 1][world.fantasmaYellow.xYellow] != 1) {
+              return true;
+            } {
+              return false;
+            }
+
+          }
+        }
+
+        /**
+         * Verifica si es posible que el fantasma Amarillo realice un movimiento hacia abajo
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean} 
+         */
+        function isValidFantasmaYellowDown(world, mapa) {
+          if (world.fantasmaYellow.xYellow >= 0 && world.fantasmaYellow.xYellow < length(first(mapa)) && world.fantasmaYellow.yYellow >= 0 && world.fantasmaYellow.yYellow < length(mapa)) {
+            if (mapa[world.fantasmaYellow.yYellow + 1][world.fantasmaYellow.xYellow] != 1) {
+              return true;
+            } {
+              return false;
+            }
+
+          }
+        }
+
+
+        // ********* Fin del Fantasma Amarillo *********
+
+        // ********* Fin del Segmento de movimiento de los Fantasmas ********* 
+
+
+        /*
+          ********* Funciones Que Verificar en Movimiento de Pacman en las cuatro Direcciones Posibles  *********
+        */
+
+        /**
+         * Verifica si es posible que PacMan realice un movimiento hacia la derecha
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function verificarMovimientoRight(world, mapa) {
+          if (world.pacman.xOne >= 0 && world.pacman.xOne < length(first(mapa)) &&
+            world.pacman.yOne >= 0 && world.pacman.yOne < length(mapa)) {
+            if (mapa[world.pacman.yOne][world.pacman.xOne + 1] != 1) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+
+        /**
+         * Verifica si es posible que PacMan realice un movimiento hacia la izquierda
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function verificarMovimientoLeft(world, mapa) {
+          if (world.pacman.xOne >= 0 && world.pacman.xOne < length(first(mapa)) &&
+            world.pacman.yOne >= 0 && world.pacman.yOne < length(mapa)) {
+            if (mapa[world.pacman.yOne][world.pacman.xOne - 1] != 1) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        /**
+         * Verifica si es posible que PacMan realice un movimiento hacia la abajo
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function verificarMovimientoDown(world, mapa) {
+          if (world.pacman.xOne >= 0 && world.pacman.xOne < length(first(mapa)) &&
+            world.pacman.yOne >= 0 && world.pacman.yOne < length(mapa)) {
+            if (mapa[world.pacman.yOne + 1][world.pacman.xOne] != 1) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        /**
+         * Verifica si es posible que PacMan realice un movimiento hacia la arriba
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function verificarMovimientoUp(world, mapa) {
+          if (world.pacman.xOne >= 0 && world.pacman.xOne < length(first(mapa)) &&
+            world.pacman.yOne >= 0 && world.pacman.yOne < length(mapa)) {
+            if (mapa[world.pacman.yOne - 1][world.pacman.xOne] != 1) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        // ********* Fin de Funciones de Moviemiento *********
+
+        /*
+          ********* Funciones Para Verificar Si Pacman Se Encuentra Con Una Galleta *********
+        */
+
+        /**
+          * Verifica si a la direccion izquierda de pacman hay una galleta 
+          * @param {Object} world 
+          * @param {Object} mapa 
+          * @returns {boolean}
+          */
+        function verificarSiHayGallestasLeft(world, mapa) {
+          if (world.pacman.xOne >= 0 && world.pacman.xOne < length(first(mapa)) &&
+            world.pacman.yOne >= 0 && world.pacman.yOne < length(mapa)) {
+            if (mapa[world.pacman.yOne][world.pacman.xOne - 1] == 2 || mapa[world.pacman.yOne][world.pacman.xOne - 1] == 3) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        /**
+         * Verifica si a la direccion derecha de pacman hay una galleta 
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function verificarSiHayGallestasRight(world, mapa) {
+          if (world.pacman.xOne >= 0 && world.pacman.xOne < length(first(mapa)) &&
+            world.pacman.yOne >= 0 && world.pacman.yOne < length(mapa)) {
+            if (mapa[world.pacman.yOne][world.pacman.xOne + 1] == 2 || mapa[world.pacman.yOne][world.pacman.xOne + 1] == 3) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        /**
+         * Verifica si a la direccion arriba de pacman hay una galleta 
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function verificarSiHayGallestasUp(world, mapa) {
+          if (world.pacman.xOne >= 0 && world.pacman.xOne < length(first(mapa)) &&
+            world.pacman.yOne >= 0 && world.pacman.yOne < length(mapa)) {
+            if (mapa[world.pacman.yOne - 1][world.pacman.xOne] == 2 || mapa[world.pacman.yOne - 1][world.pacman.xOne] == 3) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        /**
+         * Verifica si a la direccion abajo de pacman hay una galleta 
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function verificarSiHayGallestasDown(world, mapa) {
+          if (world.pacman.xOne >= 0 && world.pacman.xOne < length(first(mapa)) &&
+            world.pacman.yOne >= 0 && world.pacman.yOne < length(mapa)) {
+            if (mapa[world.pacman.yOne + 1][world.pacman.xOne] == 2 || mapa[world.pacman.yOne + 1][world.pacman.xOne] == 3) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        /**
+         * Verifica Si en la posicion de pacman hay galletas 
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function verificarSiHayGallestas(world, mapa) {
+          if (world.pacman.xOne >= 0 && world.pacman.xOne < length(first(mapa)) &&
+            world.pacman.yOne >= 0 && world.pacman.yOne < length(mapa)) {
+            if (mapa[world.pacman.yOne][world.pacman.xOne] == 2 || mapa[world.pacman.yOne][world.pacman.xOne] == 3) {
+              return true;
+            }
+          } {
+            return false;
+          }
+        }
+
+        // ********* Fin Segmento de Verificación de Galleta *********
+
+        // ********* Segmento Funciones de Validación PowerUp *********
+        /**
+         * Verifica si la galleta del PowerUp Ha Sido Devorada por Pacman
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function ghost(world, mapa) {
+          if (mapa[3][7] == 0) {
+            return true;
+          } {
+            return false;
+          }
+
+        }
+        /**
+         * Verifica si la galleta del PowerUp Ha Sido Devorada por Pacman
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function ghostTwo(world, mapa) {
+          if (mapa[3][23] == 0) {
+            return true;
+          } {
+            return false;
+          }
+
+        }
+        /**
+         * Verifica si la galleta del PowerUp Ha Sido Devorada por Pacman
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function ghostThree(world, mapa) {
+          if (mapa[18][8] == 0) {
+            return true;
+          } {
+            return false;
+          }
+
+        }
+        /**
+         * Verifica si la galleta del PowerUp Ha Sido Devorada por Pacman
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {boolean}
+         */
+        function ghostFour(world, mapa) {
+          if (mapa[18][22] == 0) {
+            return true;
+          } {
+            return false;
+          }
+
+        }
+
+        // ********* Fin Segmento *********
+
+        // ********* Función Fantasmas Debiles del PowerUp
+
+        /**
+         * Cambia el estado del fantasma para permitir que sea devorado por pacman
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {}
+         */
+        function weakGhost(world, mapa) {
+          if (ghost(world, mapa) == true && mapa[3][7] == 0) {
+            if (world.timepowerOne > 80) {
+              processing.image(fantasmaONE, world.fantasmaOne.xF * size, world.fantasmaOne.yF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaTWO, world.fantasmaTwoGreen.xGreen * size, world.fantasmaTwoGreen.yGreen * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaTHEREE, world.fantasmaTheree.xFF * size, world.fantasmaTheree.YFF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaFOUR, world.fantasmaYellow.xYellow * size, world.fantasmaYellow.yYellow * size, sizeTwo, sizeTwo);
+              mapa[3][7] = 4;
+              //timeExtra: world.timeExtra * 0
+
+            } else {
+              processing.image(fantasmaPowerUp, world.fantasmaOne.xF * size, world.fantasmaOne.yF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaPowerUp, world.fantasmaTwoGreen.xGreen * size, world.fantasmaTwoGreen.yGreen * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaPowerUp, world.fantasmaTheree.xFF * size, world.fantasmaTheree.YFF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaPowerUp, world.fantasmaYellow.xYellow * size, world.fantasmaYellow.yYellow * size, sizeTwo, sizeTwo);
+            }
+
+            //console.log(weakTime);
+          } else if (ghostTwo(world, mapa) == true && mapa[3][23] == 0) {
+            if (world.timepowerTwo > 80) {
+              processing.image(fantasmaONE, world.fantasmaOne.xF * size, world.fantasmaOne.yF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaTWO, world.fantasmaTwoGreen.xGreen * size, world.fantasmaTwoGreen.yGreen * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaTHEREE, world.fantasmaTheree.xFF * size, world.fantasmaTheree.YFF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaFOUR, world.fantasmaYellow.xYellow * size, world.fantasmaYellow.yYellow * size, sizeTwo, sizeTwo);
+              mapa[3][23] = 4;
+              //world.timeExtra * 0;
+
+            } else {
+              processing.image(fantasmaPowerUp, world.fantasmaOne.xF * size, world.fantasmaOne.yF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaPowerUp, world.fantasmaTwoGreen.xGreen * size, world.fantasmaTwoGreen.yGreen * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaPowerUp, world.fantasmaTheree.xFF * size, world.fantasmaTheree.YFF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaPowerUp, world.fantasmaYellow.xYellow * size, world.fantasmaYellow.yYellow * size, sizeTwo, sizeTwo);
+            }
+
+            //console.log(weakTime);
+          } else if (ghostThree(world, mapa) == true && mapa[18][8] == 0) {
+            if (world.timepowerThree > 80) {
+              processing.image(fantasmaONE, world.fantasmaOne.xF * size, world.fantasmaOne.yF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaTWO, world.fantasmaTwoGreen.xGreen * size, world.fantasmaTwoGreen.yGreen * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaTHEREE, world.fantasmaTheree.xFF * size, world.fantasmaTheree.YFF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaFOUR, world.fantasmaYellow.xYellow * size, world.fantasmaYellow.yYellow * size, sizeTwo, sizeTwo);
+              mapa[18][8] = 4;
+              //world.timeExtra * 0;
+
+            } else {
+              processing.image(fantasmaPowerUp, world.fantasmaOne.xF * size, world.fantasmaOne.yF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaPowerUp, world.fantasmaTwoGreen.xGreen * size, world.fantasmaTwoGreen.yGreen * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaPowerUp, world.fantasmaTheree.xFF * size, world.fantasmaTheree.YFF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaPowerUp, world.fantasmaYellow.xYellow * size, world.fantasmaYellow.yYellow * size, sizeTwo, sizeTwo);
+            }
+
+            //console.log(weakTime);
+          } else if (ghostFour(world, mapa) == true && mapa[18][22] == 0) {
+            if (world.timepowerFour > 80) {
+              processing.image(fantasmaONE, world.fantasmaOne.xF * size, world.fantasmaOne.yF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaTWO, world.fantasmaTwoGreen.xGreen * size, world.fantasmaTwoGreen.yGreen * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaTHEREE, world.fantasmaTheree.xFF * size, world.fantasmaTheree.YFF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaFOUR, world.fantasmaYellow.xYellow * size, world.fantasmaYellow.yYellow * size, sizeTwo, sizeTwo);
+              mapa[18][22] = 4;
+              //world.timeExtra * 0;
+
+            } else {
+              processing.image(fantasmaPowerUp, world.fantasmaOne.xF * size, world.fantasmaOne.yF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaPowerUp, world.fantasmaTwoGreen.xGreen * size, world.fantasmaTwoGreen.yGreen * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaPowerUp, world.fantasmaTheree.xFF * size, world.fantasmaTheree.YFF * size, sizeTwo, sizeTwo);
+              processing.image(fantasmaPowerUp, world.fantasmaYellow.xYellow * size, world.fantasmaYellow.yYellow * size, sizeTwo, sizeTwo);
+            }
+
+            //console.log(weakTime);
+          } else {
+            //Imagenes
+            processing.image(fantasmaONE, world.fantasmaOne.xF * size, world.fantasmaOne.yF * size, sizeTwo, sizeTwo);
+            processing.image(fantasmaTWO, world.fantasmaTwoGreen.xGreen * size, world.fantasmaTwoGreen.yGreen * size, sizeTwo, sizeTwo);
+            processing.image(fantasmaTHEREE, world.fantasmaTheree.xFF * size, world.fantasmaTheree.YFF * size, sizeTwo, sizeTwo);
+            processing.image(fantasmaFOUR, world.fantasmaYellow.xYellow * size, world.fantasmaYellow.yYellow * size, sizeTwo, sizeTwo);
+            // console.log(weakTime);
+            //Fin Imagenes/
+          }
+        }
+
+        /**
+         * Permite Cazar al fantasma Rojo siempre y cuando pacman haya comido una galleta PowerUp
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {Object}
+         */
+        function matarFantasmaRed(world, mapa) {
+
+          if (matarPacManRed(world) == true) {
+
+            return { xF: 15, yF: 1 }
+
+          } {
+
+            if (world.timepowerOne > 75 && mapa[3][7] == 0 || world.timepowerTwo > 75 && mapa[3][23] == 0 || world.timepowerThree > 75 && mapa[18][8] == 0 || world.timepowerFour > 75 && mapa[18][22] == 0) {
+              return { xF: 1, yF: 15 }
+            } else {
+              return movimientoFantasma(world, mapa);
+            }
+          }
+
+        }
+
+        /**
+         * Permite Cazar al fantasma Azul siempre y cuando pacman haya comido una galleta PowerUp
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {Object}
+         */
+        function matarFantasmaBlue(world, mapa) {
+
+          if (matarPacManBlue(world) == true) {
+
+            return { xFF: 15, YFF: 1 }
+
+          } {
+
+            if (world.timepowerTwo > 75 && mapa[3][23] == 0 || world.timepowerOne > 75 && mapa[3][7] == 0 || world.timepowerThree > 75 && mapa[18][8] == 0 || world.timepowerFour > 75 && mapa[18][22] == 0) {
+              return { xFF: 10, YFF: 16 }
+            } else {
+              return movimientoFantasmaThreeBlue(world, mapa);
+            }
+          }
+        }
+        /**
+         * Permite Cazar al fantasma Amarillo siempre y cuando pacman haya comido una galleta PowerUp
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {Object}
+         */
+        function matarFantasmaYellow(world, mapa) {
+
+          if (matarPacManYellow(world) == true) {
+
+            return { xYellow: 16, yYellow: 1 }
+
+          } {
+
+            if (world.timepowerTwo > 75 && mapa[3][23] == 0 || world.timepowerOne > 75 && mapa[3][7] == 0 || world.timepowerThree > 75 && mapa[18][8] == 0 || world.timepowerFour > 75 && mapa[18][22] == 0) {
+              return { xYellow: 11, yYellow: 5 }
+            } else {
+              return movimientoFantasmaFourYellow(world, mapa);
+            }
+          }
+        }
+
+        /**
+         * Permite Cazar al fantasma Verde siempre y cuando pacman haya comido una galleta PowerUp
+         * @param {Object} world 
+         * @param {Object} mapa 
+         * @returns {Object}
+         */
+        function matarFantasmaGreen(world, mapa) {
+
+          if (matarPacManGreen(world) == true) {
+
+            return { xGreen: 15, yGreen: 1 }
+
+          } {
+
+            if (world.timepowerOne > 75 && mapa[3][7] == 0 || world.timepowerTwo > 75 && mapa[3][23] == 0 || world.timepowerThree > 75 && mapa[18][8] == 0 || world.timepowerFour > 75 && mapa[18][22] == 0) {
+              return { xGreen: 25, yGreen: 1 }
+            } else {
+              return movimientoFantasmaTwoGreen(world, mapa);
+            }
+          }
+
+        }
+        // ********* Fin Segmento PowerUp *********
+
+
+        /*
+          ********* Funciones Para Verificar la Pulsación de una Tecla Designada al Movimiento *********
+        */
+
+        processing.onKeyEvent = function (world, keyCode) {
+          console.log(keyCode);
+          switch (keyCode) {
+            case processing.LEFT:
+              if (verificarSiHayGallestasLeft(world, mapa) == true) {
+                if (mapa[world.pacman.yOne][world.pacman.xOne - 1] == 3) {
+                  mapa[world.pacman.yOne][world.pacman.xOne] = 0;
+                  puntajeW = world.puntaje + 50;
+                  audio3.play(audio3);
+
+                } else {
+                  mapa[world.pacman.yOne][world.pacman.xOne] = 0;
+                  puntajeW = world.puntaje + 10;
+                  audio.play(audio);
+                }
+
+              }
+              if (verificarSiHayGallestas(world, mapa) == true) {
+                mapa[world.pacman.yOne][world.pacman.xOne] = 0;
+
+              }
+              if (verificarMovimientoLeft(world, mapa) == false) {
+                return make(world, { pacman: { xOne: world.pacman.xOne, yOne: world.pacman.yOne, direx: "LEFT", dirx: 37, diry: null, vidas: world.pacman.vidas }, puntaje: puntajeW });
+              } {
+                return make(world, { pacman: { xOne: world.pacman.xOne - 1, yOne: world.pacman.yOne, direx: "LEFT", dirx: 37, diry: null, vidas: world.pacman.vidas }, puntaje: puntajeW });
+              }
+
+              break;
+            case processing.RIGHT:
+              if (verificarSiHayGallestasRight(world, mapa) == true) {
+                if (mapa[world.pacman.yOne][world.pacman.xOne + 1] == 3) {
+
+                  mapa[world.pacman.yOne][world.pacman.xOne] = 0;
+                  puntajeW = world.puntaje + 50;
+                  audio3.play(audio3);
+
+                } else {
+                  mapa[world.pacman.yOne][world.pacman.xOne] = 0;
+                  puntajeW = world.puntaje + 10;
+                  audio.play(audio);
+                }
+              }
+              if (verificarSiHayGallestas(world, mapa) == true) {
+                mapa[world.pacman.yOne][world.pacman.xOne] = 0;
+
+              }
+              if (verificarMovimientoRight(world, mapa) == false) {
+                return make(world, { pacman: { xOne: world.pacman.xOne, yOne: world.pacman.yOne, direx: "RIGHT", dirx: 39, diry: null, vidas: world.pacman.vidas }, puntaje: puntajeW });
+              }
+              return make(world, { pacman: { xOne: world.pacman.xOne + 1, yOne: world.pacman.yOne, direx: "RIGHT", dirx: 39, diry: null, vidas: world.pacman.vidas }, puntaje: puntajeW });
+              break;
+
+            case processing.UP:
+              if (verificarSiHayGallestasUp(world, mapa) == true) {
+                if (mapa[world.pacman.yOne - 1][world.pacman.xOne] == 3) {
+                  mapa[world.pacman.yOne][world.pacman.xOne / sizeTwo] = 0;
+                  puntajeW = world.puntaje + 50;
+                  audio3.play(audio3);
+
+                } else {
+                  mapa[world.pacman.yOne][world.pacman.xOne] = 0;
+                  puntajeW = world.puntaje + 10;
+                  audio.play(audio);
+                }
+              }
+              if (verificarSiHayGallestas(world, mapa) == true) {
+                mapa[world.pacman.yOne][world.pacman.xOne] = 0;
+
+              }
+              if (verificarMovimientoUp(world, mapa) == false) {
+                return make(world, { pacman: { xOne: world.pacman.xOne, yOne: world.pacman.yOne, direx: "UP", dirx: null, diry: 38, vidas: world.pacman.vidas }, puntaje: puntajeW });
+              } {
+                return make(world, { pacman: { xOne: world.pacman.xOne, yOne: world.pacman.yOne - 1, direx: "UP", dirx: null, diry: 38, vidas: world.pacman.vidas }, puntaje: puntajeW });
+              }
+              break;
+            case processing.DOWN:
+              if (verificarSiHayGallestasDown(world, mapa) == true) {
+                if (mapa[world.pacman.yOne + 1][world.pacman.xOne] == 3) {
+                  mapa[world.pacman.yOne][world.pacman.xOne] = 0;
+                  puntajeW = world.puntaje + 50;
+                  audio3.play(audio3);
+
+                } else {
+                  mapa[world.pacman.yOne][world.pacman.xOne] = 0;
+                  puntajeW = world.puntaje + 10;
+                  audio.play(audio);
+
+                }
+              }
+              if (verificarSiHayGallestas(world, mapa) == true) {
+                mapa[world.pacman.yOne][world.pacman.xOne] = 0;
+
+
+              }
+              if (verificarMovimientoDown(world, mapa) == false) {
+                return make(world, { pacman: { xOne: world.pacman.xOne, yOne: world.pacman.yOne, dirx: null, diry: 40, direx: "DOWN", vidas: world.pacman.vidas }, puntaje: puntajeW });
+              } {
+                return make(world, { pacman: { xOne: world.pacman.xOne, yOne: world.pacman.yOne + 1, dirx: null, diry: 40, direx: "DOWN", vidas: world.pacman.vidas }, puntaje: puntajeW });
+              }
+              break;
+            default:
+              console.log(keyCode);
+              return make(world, {});
+          }
+        }
+
+        // ********* Fin de las teclas de Movimiento ********* 
+
+
+        processing.onTic = function (world) {
+
+          audioT.play(audioT);
+
+          let r = movimientoFantasma(world, mapa);
+          let g = movimientoFantasmaTwoGreen(world, mapa);
+          let b = movimientoFantasmaThreeBlue(world, mapa);
+          let y = movimientoFantasmaFourYellow(world, mapa);
+          let d = verificarDeath(world, mapa);
+          let drg = matarFantasmaRed(world, mapa);
+          let dbg = matarFantasmaBlue(world, mapa);
+          let dgg = matarFantasmaGreen(world, mapa);
+          let dyg = matarFantasmaYellow(world, mapa);
+
+          /*
+            ********* Condiciones Empleadas Para Permitir el Teletransporte *********
+          */
+
+          //teletrasportacion pacman Y
+          if (world.pacman.yOne >= 22 && world.pacman.xOne == 8) {
+            return make(world, { pacman: { xOne: world.pacman.xOne + 14, yOne: world.pacman.yOne - 1, dirx: null, diry: 38, direx: world.pacman.direx, vidas: world.pacman.vidas } });
+          }
+          if (world.pacman.yOne >= 22 && world.pacman.xOne == 22) {
+            return make(world, { pacman: { xOne: world.pacman.xOne - 14, yOne: world.pacman.yOne - 1, dirx: null, diry: 38, direx: world.pacman.direx, vidas: world.pacman.vidas } });
+          }
+          //teletrasportacion pacman X
+          if (world.pacman.xOne < 0) {
+            return make(world, { pacman: { xOne: world.pacman.xOne + 31, yOne: world.pacman.yOne, dirx: world.pacman.dirx, diry: world.pacman.diry, direx: world.pacman.direx, vidas: world.pacman.vidas } });
+          }
+          if (world.pacman.xOne > 30) {
+
+            return make(world, { pacman: { xOne: world.pacman.xOne - 31, yOne: world.pacman.yOne, dirx: world.pacman.dirx, diry: world.pacman.diry, direx: world.pacman.direx, vidas: world.pacman.vidas } });
+          }
+
+          /*+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+*/
+          /*teletrasportacion fantasmas*/
+          //teletrasportacion fantasma azul Y
+
+          if (world.fantasmaTheree.YFF >= 22 && world.fantasmaTheree.xFF == 8) {
+            return make(world, { fantasmaTheree: { xFF: world.fantasmaTheree.xFF + 14, YFF: world.fantasmaTheree.YFF - 1 } });
+          }
+          if (world.fantasmaTheree.YFF >= 22 && world.fantasmaTheree.xFF == 22) {
+            return make(world, { fantasmaTheree: { xFF: world.fantasmaTheree.xFF - 14, YFF: world.fantasmaTheree.YFF - 1 } });
+          }
+          //teletrasportacion fantasma azul X     
+          if (world.fantasmaTheree.xFF < 0) {
+            return make(world, { fantasmaTheree: { xFF: world.fantasmaTheree.xFF + 31, YFF: world.fantasmaTheree.YFF } });
+          }
+          if (world.fantasmaTheree.xFF > 30) {
+            return make(world, { fantasmaTheree: { xFF: world.fantasmaTheree.xFF - 31, YFF: world.fantasmaTheree.YFF } });
+          }
+          // ********
+          //  teletrasportacion fantasma Amarillo Y 
+          if (world.fantasmaYellow.yYellow >= 22 && world.fantasmaYellow.xYellow == 8) {
+            return make(world, { fantasmaYellow: { xYellow: world.fantasmaYellow.xYellow + 14, yYellow: world.fantasmaYellow.yYellow - 1 } });
+          }
+          if (world.fantasmaYellow.yYellow >= 22 && world.fantasmaYellow.xYellow == 22) {
+            return make(world, { fantasmaYellow: { xYellow: world.fantasmaYellow.xYellow - 14, yYellow: world.fantasmaYellow.yYellow - 1 } });
+          }
+          //teletrasportacion fantasma Amarillo X     
+          if (world.fantasmaYellow.xYellow < 0) {
+            return make(world, { fantasmaYellow: { xYellow: world.fantasmaYellow.xYellow + 31, yYellow: world.fantasmaYellow.yYellow } });
+          }
+          if (world.fantasmaYellow.xYellow > 30) {
+            return make(world, { fantasmaYellow: { xYellow: world.fantasmaYellow.xYellow - 31, yYellow: world.fantasmaYellow.yYellow } });
+          }
+
+          // ********* Fin de Teletransporte del Pacman,el Fantasma Azul y el Fantasma Amarillo *********
+
+
+
+          // ********* Condicion de Derrota *********
+          if (world.pacman.vidas == 0) {
+            window.location = "alternativeScreens/deadScreenUV.html";
+          }
+          // ********* Fin Condicion de Derrota *********
+
+          // ********* Condiciones para la Muerte de los Fantasmas *********
+          if (ghost(world, mapa) == true) {
+
+            return make(world, { time: world.time + 1, fantasmaTwoGreen: dgg, fantasmaOne: drg, fantasmaTheree: dbg, fantasmaYellow: dyg, timepowerOne: world.timepowerOne + 1 });
+
+          } else if (ghostTwo(world, mapa) == true) {
+            return make(world, { time: world.time + 1, fantasmaTwoGreen: dgg, fantasmaOne: drg, fantasmaTheree: dbg, fantasmaYellow: dyg, timepowerTwo: world.timepowerTwo + 1 });
+
+          } else if (ghostThree(world, mapa) == true) {
+            return make(world, { time: world.time + 1, fantasmaTwoGreen: dgg, fantasmaOne: drg, fantasmaTheree: dbg, fantasmaYellow: dyg, timepowerThree: world.timepowerThree + 1 });
+
+
+          } else if (ghostFour(world, mapa) == true) {
+            return make(world, { time: world.time + 1, fantasmaTwoGreen: dgg, fantasmaOne: drg, fantasmaTheree: dbg, fantasmaYellow: dyg, timepowerFour: world.timepowerFour + 1 });
+
+          } else {
+
+            return make(world, { time: world.time + 1, fantasmaTwoGreen: g, fantasmaOne: r, fantasmaTheree: b, fantasmaYellow: y, pacman: d });
+          }
+
+          // ********* Fin de las Condiciones Para la Muerte de los Fantasmas *********
+
+        }
+
+
+        processing.onMouseEvent = function (world, event) {
+          return make(world, {});
+        }
+
+        // ******************** De aquí hacia abajo no debe cambiar nada. ********************
+
+        // Esta es la función que pinta todo. Se ejecuta 60 veces por segundo. 
+        // No cambie esta función. Su código debe ir en drawGame
+        processing.draw = function () {
+          processing.drawGame(processing.state);
+          processing.state = processing.onTic(processing.state);
+        };
+
+
+        // Esta función se ejecuta cada vez que presionamos una tecla. 
+        // No cambie esta función. Su código debe ir en onKeyEvent
+        processing.keyPressed = function () {
+          processing.state = processing.onKeyEvent(processing.state, processing.keyCode);
+        }
+
+        // Esta función se ejecuta cada vez movemos el mouse. 
+        // No cambie esta función. Su código debe ir en onKeyEvent
+        processing.mouseMoved = function () {
+          processing.state = processing.onMouseEvent(processing.state,
+            { action: "move", mouseX: processing.mouseX, mouseY: processing.mouseY });
+        }
+
+        // Estas funciones controlan los eventos del mouse. 
+        // No cambie estas funciones. Su código debe ir en OnMouseEvent
+        processing.mouseClicked = function () {
+          processing.state = processing.onMouseEvent(processing.state,
+            { action: "click", mouseX: processing.mouseX, mouseY: processing.mouseY, mouseButton: processing.mouseButton });
+        }
+
+        processing.mouseDragged = function () {
+          processing.state = processing.onMouseEvent(processing.state,
+            { action: "drag", mouseX: processing.mouseX, mouseY: processing.mouseY, mouseButton: processing.mouseButton });
+        }
+
+        processing.mousePressed = function () {
+          processing.state = processing.onMouseEvent(processing.state,
+            { action: "press", mouseX: processing.mouseX, mouseY: processing.mouseY, mouseButton: processing.mouseButton });
+        }
+
+        processing.mouseReleased = function () {
+          processing.state = processing.onMouseEvent(processing.state,
+            { action: "release", mouseX: processing.mouseX, mouseY: processing.mouseY, mouseButton: processing.mouseButton });
+        }
+        // Fin de los eventos del mouse
+      }
+
+      var canvas = document.getElementById("canvas");
+      document.getElementById("audioT").volume = 0.2;
+      // Adjuntamos nuestro sketch al framework de processing
+      var processingInstance = new Processing(canvas, sketchProc);
+      canvas.focus();
+    </script>
+  </div>
+
+</body>

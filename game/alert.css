@@ -1,0 +1,75 @@
+.overlay {
+    background-color: rgba(0, 0, 0, .01);
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    visibility: visible;
+    width: 400px;
+    height: 200px;
+}
+
+.overlay .actove {
+    visibility: visible;
+}
+
+.overlay.noactive {
+    animation: salida .4s ease .3s forwards;
+    transition-delay: .2s;
+    visibility: hidden;
+}
+
+.popup {
+    background-color: seashell;
+    box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, .7);
+    border-radius: 3px;
+    font-family: 'Baloo Chettan 2', cursive;
+    font-weight: 500;
+    padding: 20px;
+    text-align: center;
+    opacity: 0;
+    animation: entrada .8s ease .4s forwards;
+}
+
+.popup .closeup {
+    font-size: 20px;
+    line-height: 12px;
+    display: block;
+    text-align: right;
+    color: silver;
+    transition: .3s ease all;
+}
+
+.popup .closeup:hover {
+    color: black;
+}
+
+.popup .h4 {
+    margin-bottom: 35px;
+}
+
+@keyframes entrada {
+    from {
+        transform: translateX(-100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0px);
+        opacity: 1;
+    }
+}
+
+@keyframes salida {
+    from {
+        transform: translateX(0px);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(-100px);
+        opacity: 0;
+    }
+}
